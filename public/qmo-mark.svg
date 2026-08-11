@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">QMO Events</title>
+  <rect width="512" height="512" rx="112" fill="#082f73"/>
+  <circle cx="256" cy="256" r="172" fill="none" stroke="#f6ba28" stroke-width="22"/>
+  <path d="M155 181h202v41H155zm20 65h162v40H175zm29 65h104v40H204z" fill="#fff"/>
+  <path d="m326 331 48 48" stroke="#f6ba28" stroke-width="27" stroke-linecap="round"/>
+</svg>
