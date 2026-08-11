@@ -11,6 +11,7 @@ interface AuthContextValue {
   signIn: (email: string, password: string) => Promise<void>
   signOut: () => Promise<void>
   resetPassword: (email: string) => Promise<void>
+  updatePassword: (currentPassword: string, newPassword: string) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
@@ -188,6 +189,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           redirectTo: `${window.location.origin}/login`,
         })
         if (error) throw error
+      },
+      updatePassword: async (currentPassword, newPassword) => {
+        if (!supabase) {
+          throw new Error('Password changes become available after Supabase is connected.')
+        }
+
+        const { data: authData, error: userError } = await supabase.auth.getUser()
+        if (userError) throw userError
+        if (!authData.user?.email) {
+          throw new Error('Your authenticated email address could not be verified. Please sign in again.')
+        }
+
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: authData.user.email,
+          password: currentPassword,
+        })
+        if (signInError) {
+          if (signInError.code === 'invalid_credentials') {
+            throw new Error('Your current password is incorrect.')
+          }
+          throw signInError
+        }
+
+        const { error: updateError } = await supabase.auth.updateUser({ password: newPassword })
+        if (updateError) throw updateError
       },
     }),
     [user, isLoading],

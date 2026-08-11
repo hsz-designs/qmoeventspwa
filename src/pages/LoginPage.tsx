@@ -8,8 +8,8 @@ import { useAuth } from '../context/AuthContext'
 export function LoginPage() {
   const { user, signIn, resetPassword, isDemoMode } = useAuth()
   const navigate = useNavigate()
-  const [email, setEmail] = useState('student@students.national-u.edu.ph')
-  const [password, setPassword] = useState('nationalian')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [remember, setRemember] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -70,7 +70,8 @@ export function LoginPage() {
           <div className="login-card__icon"><CalendarCheck2 size={25} /></div>
           <span className="eyebrow">WELCOME, NATIONALIAN</span>
           <h2>Sign in to your account</h2>
-          <p>Use your NU Manila account credentials to continue.</p>
+          <p>Access your QMO Events account to view and manage your events.</p>
+
 
           {isDemoMode && (
             <div className="preview-notice">
@@ -80,7 +81,7 @@ export function LoginPage() {
           )}
 
           <form onSubmit={handleSubmit}>
-            <label htmlFor="email">Institutional email</label>
+            <label htmlFor="email">Email</label>
             <div className="input-wrap">
               <Mail size={18} />
               <input
@@ -133,7 +134,7 @@ export function LoginPage() {
           <PwaInstallAction placement="login" />
 
           <div className="login-card__help">
-            Need help accessing your account? <a href="mailto:qmo@national-u.edu.ph">Contact QMO support</a>
+            Need help accessing your account? <a href="#">Contact QMO support</a>
           </div>
         </div>
         <footer>© 2026 National University Manila · Quality Management Office</footer>
