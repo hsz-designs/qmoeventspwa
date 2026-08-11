@@ -59,6 +59,9 @@ interface NuCertificateRow {
   recipient_name: string | null
   recipient_email: string | null
   verification_code: string | null
+  file_path?: string | null
+  certificate_url?: string | null
+  download_url?: string | null
   issued_at: string | null
   revoked_at: string | null
   status: string | number | null
@@ -125,7 +128,9 @@ function getAuditFilePath(value: unknown, depth = 0): string | undefined {
     try {
       return getAuditFilePath(JSON.parse(text), depth + 1)
     } catch {
-      return /\.(?:png|jpe?g|webp|gif|pdf)(?:[?#].*)?$/i.test(text) ? text : undefined
+      return /(?:^|\/)certificates\/[^\s]+/i.test(text) || /\.(?:png|jpe?g|webp|gif|pdf)(?:[?#].*)?$/i.test(text)
+        ? text
+        : undefined
     }
   }
 
@@ -268,7 +273,7 @@ export function EventProvider({ children }: { children: ReactNode }) {
         user
           ? client
             .from('nu_certificates')
-            .select('id,created_at,event_id,recipient_name,recipient_email,verification_code,issued_at,revoked_at,status')
+            .select('*')
             .eq('recipient_email', user.email)
             .order('issued_at', { ascending: false })
           : Promise.resolve({ data: [], error: null }),
@@ -376,22 +381,33 @@ export function EventProvider({ children }: { children: ReactNode }) {
         const certificateAudits = !certificateAuditsResult.error && certificateAuditsResult.data
           ? certificateAuditsResult.data as NuCertificateAuditRow[]
           : []
+        const userRegistrations = !registrationsResult.error && registrationsResult.data
+          ? registrationsResult.data as EventAttendeeRow[]
+          : []
         setCertificates(
-          (certificateResult.data as NuCertificateRow[]).map((item) => ({
-            id: String(item.id),
-            createdAt: item.created_at,
-            eventId: String(item.event_id),
-            recipientName: item.recipient_name?.trim() || 'Certificate recipient',
-            recipientEmail: item.recipient_email?.trim() || 'Email not specified',
-            verificationCode: item.verification_code?.trim() || String(item.id),
-            filePath: certificateAudits
+          (certificateResult.data as NuCertificateRow[]).map((item) => {
+            const relatedRegistrationPath = userRegistrations
+              .filter((registration) => String(registration.event_id) === String(item.event_id))
+              .map((registration) => registration.certificate_url?.trim())
+              .find((filePath): filePath is string => Boolean(filePath))
+            const auditFilePath = certificateAudits
               .filter((audit) => String(audit.certificate_id) === String(item.id))
               .map((audit) => getAuditFilePath(audit.metadata))
-              .find((filePath): filePath is string => Boolean(filePath)),
-            issuedAt: item.issued_at || item.created_at,
-            revokedAt: item.revoked_at || undefined,
-            status: item.status === null ? undefined : String(item.status),
-          })),
+              .find((filePath): filePath is string => Boolean(filePath))
+
+            return {
+              id: String(item.id),
+              createdAt: item.created_at,
+              eventId: String(item.event_id),
+              recipientName: item.recipient_name?.trim() || 'Certificate recipient',
+              recipientEmail: item.recipient_email?.trim() || 'Email not specified',
+              verificationCode: item.verification_code?.trim() || String(item.id),
+              filePath: getAuditFilePath(item) || relatedRegistrationPath || auditFilePath,
+              issuedAt: item.issued_at || item.created_at,
+              revokedAt: item.revoked_at || undefined,
+              status: item.status === null ? undefined : String(item.status),
+            }
+          }),
         )
       } else {
         setCertificates([])

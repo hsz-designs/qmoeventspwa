@@ -1,8 +1,8 @@
 import { supabase } from './supabase'
 
 const DEFAULT_CERTIFICATE_BUCKET = 'QMOStorage'
-const SIGNED_URL_LIFETIME_SECONDS = 10 * 60
 const STORAGE_OBJECT_PATH = /\/storage\/v1\/(?:object|render\/image)\/(?:public|sign|authenticated)\/([^/]+)\/(.+)$/i
+const PUBLIC_STORAGE_URL_PATH = /\/storage\/v1\/(?:object|render\/image)\/public\//i
 
 interface StorageObjectLocation {
   bucket: string
@@ -37,7 +37,9 @@ function getCertificateFileLocation(filePath: string): CertificateFileLocation {
   if (/^(data:|blob:)/i.test(value)) return { kind: 'direct', directUrl: value }
 
   if (/^https?:\/\//i.test(value)) {
-    const storageLocation = parseStorageObjectPath(new URL(value).pathname)
+    const pathname = new URL(value).pathname
+    if (PUBLIC_STORAGE_URL_PATH.test(pathname)) return { kind: 'direct', directUrl: value }
+    const storageLocation = parseStorageObjectPath(pathname)
     return storageLocation ? { kind: 'storage', storageLocation } : { kind: 'direct', directUrl: value }
   }
 
@@ -65,10 +67,54 @@ export async function getCertificateFileUrl(filePath: string): Promise<string> {
   if (!location.storageLocation.objectPath) throw new Error('The certificate image path is invalid.')
 
   const { bucket, objectPath } = location.storageLocation
-  const { data, error } = await supabase.storage
-    .from(bucket)
-    .createSignedUrl(objectPath, SIGNED_URL_LIFETIME_SECONDS)
+  const { data } = supabase.storage.from(bucket).getPublicUrl(objectPath)
+  if (!data.publicUrl) throw new Error('Unable to create the public certificate image URL.')
+  return data.publicUrl
+}
 
-  if (error) throw new Error(`Unable to open the certificate image: ${error.message}`)
-  return data.signedUrl
+const CONTENT_TYPE_EXTENSIONS: Record<string, string> = {
+  'image/gif': 'gif',
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+  'application/pdf': 'pdf',
+}
+
+function sanitizeFilename(value: string) {
+  return value
+    .replace(/[<>:"/\\|?*\u0000-\u001F]/g, '-')
+    .replace(/\s+/g, ' ')
+    .trim() || 'QMO-certificate'
+}
+
+function getDownloadFilename(filename: string, fileUrl: string, contentType: string) {
+  const safeFilename = sanitizeFilename(filename)
+  if (/\.[a-z0-9]{2,5}$/i.test(safeFilename)) return safeFilename
+
+  let urlExtension: string | undefined
+  try {
+    urlExtension = new URL(fileUrl).pathname.match(/\.([a-z0-9]{2,5})$/i)?.[1]
+  } catch {
+    // The response content type remains a reliable fallback for non-standard URLs.
+  }
+
+  const normalizedContentType = contentType.split(';', 1)[0].toLowerCase()
+  const extension = urlExtension || CONTENT_TYPE_EXTENSIONS[normalizedContentType] || 'png'
+  return `${safeFilename}.${extension}`
+}
+
+export async function downloadCertificateFile(filePath: string, filename: string): Promise<void> {
+  const fileUrl = await getCertificateFileUrl(filePath)
+  const response = await fetch(fileUrl)
+  if (!response.ok) throw new Error(`Unable to download the certificate image (${response.status}).`)
+
+  const blob = await response.blob()
+  const objectUrl = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = objectUrl
+  link.download = getDownloadFilename(filename, fileUrl, blob.type)
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000)
 }
