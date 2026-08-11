@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { AppShell } from './components/AppShell'
 import { Brand } from './components/Brand'
+import { PwaInstallPromotion } from './components/PwaInstallPromotion'
 import { CalendarPage } from './pages/CalendarPage'
 import { useAuth } from './context/AuthContext'
 import { CertificatesPage } from './pages/CertificatesPage'
@@ -35,24 +36,27 @@ function ProtectedLayout() {
 
 export default function App() {
   return (
-    <Routes>
-      <Route path="/login" element={<LoginPage />} />
-      <Route element={<ProtectedLayout />}>
-        <Route index element={<DashboardPage />} />
-        <Route path="events/new" element={<NewEventsPage />} />
-        <Route path="events/upcoming" element={<UpcomingEventsPage />} />
-        <Route path="events/registered" element={<RegisteredEventsPage />} />
-        <Route path="events/registered/:eventId" element={<RegistrationDetailsPage />} />
-        <Route path="events/scan" element={<EventScannerPage />} />
-        <Route path="events/scan/register" element={<ScannedEventRegistrationPage />} />
-        <Route path="calendar" element={<CalendarPage />} />
-        <Route path="certificates" element={<CertificatesPage />} />
-        <Route path="history" element={<HistoryPage />} />
-        <Route path="history/login-logout" element={<AttendanceLogHistoryPage />} />
-        <Route path="profile" element={<ProfilePage />} />
-        <Route path="settings" element={<SettingsPage />} />
-      </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route element={<ProtectedLayout />}>
+          <Route index element={<DashboardPage />} />
+          <Route path="events/new" element={<NewEventsPage />} />
+          <Route path="events/upcoming" element={<UpcomingEventsPage />} />
+          <Route path="events/registered" element={<RegisteredEventsPage />} />
+          <Route path="events/registered/:eventId" element={<RegistrationDetailsPage />} />
+          <Route path="events/scan" element={<EventScannerPage />} />
+          <Route path="events/scan/register" element={<ScannedEventRegistrationPage />} />
+          <Route path="calendar" element={<CalendarPage />} />
+          <Route path="certificates" element={<CertificatesPage />} />
+          <Route path="history" element={<HistoryPage />} />
+          <Route path="history/login-logout" element={<AttendanceLogHistoryPage />} />
+          <Route path="profile" element={<ProfilePage />} />
+          <Route path="settings" element={<SettingsPage />} />
+        </Route>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+      <PwaInstallPromotion />
+    </>
   )
 }

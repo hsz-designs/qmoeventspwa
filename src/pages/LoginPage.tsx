@@ -90,7 +90,7 @@ export function LoginPage() {
                 type="email"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
-                placeholder="name@students.national-u.edu.ph"
+                placeholder="email@national-u.edu.ph"
                 autoComplete="email"
                 required
               />

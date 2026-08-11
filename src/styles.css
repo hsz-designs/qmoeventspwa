@@ -635,6 +635,73 @@ p {
   text-align: center;
 }
 
+.pwa-install-promotion {
+  position: fixed;
+  z-index: 1400;
+  right: 20px;
+  bottom: 20px;
+  display: grid;
+  width: min(470px, calc(100vw - 40px));
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 48px 14px 14px;
+  border: 1px solid rgba(255, 211, 91, 0.45);
+  border-radius: 18px;
+  color: white;
+  background: linear-gradient(135deg, #062456, #0e5bbb);
+  box-shadow: 0 22px 60px rgba(4, 29, 70, 0.3);
+}
+
+.pwa-install-promotion__icon {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border-radius: 13px;
+  color: var(--navy-950);
+  background: var(--gold-400);
+}
+
+.pwa-install-promotion__copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pwa-install-promotion__copy strong {
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.pwa-install-promotion__copy span {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.pwa-install-promotion__close {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  display: grid;
+  width: 29px;
+  height: 29px;
+  padding: 0;
+  border: 0;
+  place-items: center;
+  border-radius: 9px;
+  color: rgba(255, 255, 255, 0.68);
+  background: transparent;
+  cursor: pointer;
+}
+
+.pwa-install-promotion__close:hover {
+  color: white;
+  background: rgba(255, 255, 255, 0.1);
+}
+
 .login-card__help {
   margin-top: 27px;
   padding-top: 22px;
@@ -4747,6 +4814,24 @@ p {
 }
 
 @media (max-width: 540px) {
+  .pwa-install-promotion {
+    right: 12px;
+    bottom: calc(78px + env(safe-area-inset-bottom));
+    width: calc(100vw - 24px);
+    grid-template-columns: 40px minmax(0, 1fr);
+    padding: 13px 42px 13px 13px;
+  }
+
+  .pwa-install-promotion__icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .pwa-install-promotion > .button {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
   .profile-hero {
     align-items: flex-start;
     flex-direction: column;

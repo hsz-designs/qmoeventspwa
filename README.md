@@ -41,7 +41,7 @@ The publishable/anon key is designed for public clients when Row Level Security 
 
 ## PWA and deployment
 
-The production build generates one web manifest and one Workbox service worker through `vite-plugin-pwa`. It includes 192×192, 512×512, maskable 512×512, and Apple touch 180×180 PNG icons. The login and Settings screens expose an install action: supported Chromium browsers show the native install prompt, while iOS and browsers without that prompt show the correct manual home-screen instructions.
+The production build generates one web manifest and one Workbox service worker through `vite-plugin-pwa`. It includes 192×192, 512×512, maskable 512×512, and Apple touch 180×180 PNG icons. When a supported Chromium browser reports that the app is installable, QMO Events automatically displays an in-app installation banner; the user must still tap **Install** and approve the browser confirmation. On iPhone and iPad, the banner provides Safari's manual **Share → Add to Home Screen** steps because iOS does not expose the Chromium install prompt to websites. The login and Settings screens retain their install actions as a fallback.
 
 ```bash
 npm run build

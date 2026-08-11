@@ -1,10 +1,14 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Check, Download } from 'lucide-react'
 import { usePwaInstall } from '../context/PwaInstallContext'
 
 export function PwaInstallAction({ placement }: { placement: 'login' | 'settings' }) {
   const { canPrompt, install, isInstalled, manualInstructions } = usePwaInstall()
   const [message, setMessage] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (canPrompt) setMessage(null)
+  }, [canPrompt])
 
   if (isInstalled) {
     return placement === 'settings' ? <span className="status status--attended"><Check size={12} /> Installed</span> : null
