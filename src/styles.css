@@ -612,6 +612,29 @@ p {
   min-height: 51px;
 }
 
+.pwa-install-action--login {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 9px;
+  margin-top: 12px;
+}
+
+.pwa-install-action--login .button {
+  width: 100%;
+}
+
+.pwa-install-action__help {
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.pwa-install-action--login .pwa-install-action__help {
+  padding: 0 8px;
+  text-align: center;
+}
+
 .login-card__help {
   margin-top: 27px;
   padding-top: 22px;
@@ -4196,6 +4219,18 @@ p {
   font-size: 10px;
 }
 
+.pwa-install-action--settings {
+  display: flex;
+  max-width: 230px;
+  align-items: flex-end;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.pwa-install-action--settings .pwa-install-action__help {
+  text-align: right;
+}
+
 .theme-switch {
   position: relative;
   width: 54px;
@@ -4727,6 +4762,15 @@ p {
 
   .theme-switch {
     justify-self: start;
+  }
+
+  .pwa-install-action--settings {
+    max-width: none;
+    align-items: flex-start;
+  }
+
+  .pwa-install-action--settings .pwa-install-action__help {
+    text-align: left;
   }
 
   .calendar-shell,

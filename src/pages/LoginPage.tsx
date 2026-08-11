@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { ArrowRight, CalendarCheck2, Eye, EyeOff, LockKeyhole, Mail, ShieldCheck, Sparkles } from 'lucide-react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { Brand } from '../components/Brand'
+import { PwaInstallAction } from '../components/PwaInstallAction'
 import { useAuth } from '../context/AuthContext'
 
 export function LoginPage() {
@@ -128,6 +129,8 @@ export function LoginPage() {
               {!isSubmitting && <ArrowRight size={18} />}
             </button>
           </form>
+
+          <PwaInstallAction placement="login" />
 
           <div className="login-card__help">
             Need help accessing your account? <a href="mailto:qmo@national-u.edu.ph">Contact QMO support</a>

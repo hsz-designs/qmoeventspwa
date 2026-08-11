@@ -1,5 +1,6 @@
-import { Bell, Database, Moon, Shield, Sun } from 'lucide-react'
+import { Bell, Database, Download, Moon, Shield, Sun } from 'lucide-react'
 import { PageHeader } from '../components/PageHeader'
+import { PwaInstallAction } from '../components/PwaInstallAction'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 import { nuTableColumns } from '../lib/nuCrud'
@@ -31,6 +32,11 @@ export function SettingsPage() {
             <span className="settings-row__icon"><Shield size={21} /></span>
             <div><strong>Account Security</strong><small>{isDemoMode ? 'Connect Supabase auth for production' : 'Supabase auth connected'}</small></div>
             <span className={`status ${isDemoMode ? 'status--missed' : 'status--attended'}`}>{isDemoMode ? 'Preview' : 'Live'}</span>
+          </div>
+          <div className="settings-row">
+            <span className="settings-row__icon"><Download size={21} /></span>
+            <div><strong>Install QMO Events</strong><small>Save the app to your home screen for quick access</small></div>
+            <PwaInstallAction placement="settings" />
           </div>
         </section>
 
