@@ -37,11 +37,15 @@ export interface QmoEventSession {
 
 export interface Certificate {
   id: string
-  title: string
-  eventDate: string
-  issuedDate: string
-  certificateNumber: string
-  downloadUrl?: string
+  createdAt: string
+  eventId: string
+  recipientName: string
+  recipientEmail: string
+  verificationCode: string
+  filePath?: string
+  issuedAt: string
+  revokedAt?: string
+  status?: string
 }
 
 export interface AppUser {

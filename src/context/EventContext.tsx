@@ -6,6 +6,7 @@ import { useAuth } from './AuthContext'
 
 interface EventDataContextValue {
   events: QmoEvent[]
+  eventCatalog: QmoEvent[]
   sessions: QmoEventSession[]
   history: QmoEvent[]
   certificates: Certificate[]
@@ -51,6 +52,26 @@ interface EventAttendeeRow {
   certificate_url?: string | null
 }
 
+interface NuCertificateRow {
+  id: string | number
+  created_at: string
+  event_id: string | number
+  recipient_name: string | null
+  recipient_email: string | null
+  verification_code: string | null
+  issued_at: string | null
+  revoked_at: string | null
+  status: string | number | null
+}
+
+interface NuCertificateAuditRow {
+  id: string | number
+  created_at: string
+  certificate_id: string | number
+  action: string | null
+  metadata: unknown
+}
+
 interface EventRegistrationInsert {
   created_at: string
   user_id: string
@@ -82,6 +103,54 @@ interface BuildingRow {
 }
 
 const EventDataContext = createContext<EventDataContextValue | undefined>(undefined)
+
+const AUDIT_FILE_PATH_KEYS = new Set([
+  'filepath',
+  'certificatepath',
+  'imagepath',
+  'storagepath',
+  'fileurl',
+  'certificateurl',
+  'imageurl',
+  'downloadurl',
+  'path',
+])
+
+function getAuditFilePath(value: unknown, depth = 0): string | undefined {
+  if (depth > 5 || value === null || value === undefined) return undefined
+
+  if (typeof value === 'string') {
+    const text = value.trim()
+    if (!text) return undefined
+    try {
+      return getAuditFilePath(JSON.parse(text), depth + 1)
+    } catch {
+      return /\.(?:png|jpe?g|webp|gif|pdf)(?:[?#].*)?$/i.test(text) ? text : undefined
+    }
+  }
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const filePath = getAuditFilePath(item, depth + 1)
+      if (filePath) return filePath
+    }
+    return undefined
+  }
+
+  if (typeof value !== 'object') return undefined
+  const entries = Object.entries(value as Record<string, unknown>)
+
+  for (const [key, item] of entries) {
+    const normalizedKey = key.toLowerCase().replace(/[^a-z]/g, '')
+    if (AUDIT_FILE_PATH_KEYS.has(normalizedKey) && typeof item === 'string' && item.trim()) return item.trim()
+  }
+
+  for (const [, item] of entries) {
+    const filePath = getAuditFilePath(item, depth + 1)
+    if (filePath) return filePath
+  }
+  return undefined
+}
 
 function getEventCategory(row: EventRow): EventCategory {
   const text = `${row.event_name} ${row.event_description ?? ''}`.toLowerCase()
@@ -178,6 +247,7 @@ export function EventProvider({ children }: { children: ReactNode }) {
   const { user, isDemoMode } = useAuth()
   const shouldUseDemoData = !isSupabaseConfigured
   const [eventList, setEventList] = useState<QmoEvent[]>(shouldUseDemoData ? demoEvents : [])
+  const [eventCatalog, setEventCatalog] = useState<QmoEvent[]>(shouldUseDemoData ? [...demoEvents, ...demoPastEvents] : [])
   const [sessionList, setSessionList] = useState<QmoEventSession[]>(shouldUseDemoData ? makeDemoSessions([...demoEvents, ...demoPastEvents]) : [])
   const [history, setHistory] = useState<QmoEvent[]>(shouldUseDemoData ? demoPastEvents : [])
   const [certificates, setCertificates] = useState<Certificate[]>(shouldUseDemoData ? demoCertificates : [])
@@ -195,15 +265,31 @@ export function EventProvider({ children }: { children: ReactNode }) {
       const [eventsResult, registrationsResult, certificateResult] = await Promise.all([
         client.from('nu_events').select('*').order('start_datetime'),
         user ? client.from('nu_event_attendees').select('*').eq('user_id', user.id) : Promise.resolve({ data: [], error: null }),
-        user ? client.from('nu_event_attendees').select('id,event_id,certificate_url').eq('user_id', user.id).not('certificate_url', 'is', null) : Promise.resolve({ data: [], error: null }),
+        user
+          ? client
+            .from('nu_certificates')
+            .select('id,created_at,event_id,recipient_name,recipient_email,verification_code,issued_at,revoked_at,status')
+            .eq('recipient_email', user.email)
+            .order('issued_at', { ascending: false })
+          : Promise.resolve({ data: [], error: null }),
       ])
 
-      const [sessionsResult, attendeeCountsResult, placesResult, roomsResult, buildingsResult] = await Promise.all([
+      const certificateIds = !certificateResult.error && certificateResult.data
+        ? (certificateResult.data as NuCertificateRow[]).map((certificate) => certificate.id)
+        : []
+      const [sessionsResult, attendeeCountsResult, placesResult, roomsResult, buildingsResult, certificateAuditsResult] = await Promise.all([
         client.from('nu_event_sessions').select('*'),
         client.from('nu_event_attendees').select('event_id,status'),
         client.from('nu_places').select('*'),
         client.from('nu_rooms').select('*'),
         client.from('nu_buildings').select('*'),
+        user && certificateIds.length
+          ? client
+            .from('nu_certificate_audits')
+            .select('id,created_at,certificate_id,action,metadata')
+            .in('certificate_id', certificateIds)
+            .order('created_at', { ascending: false })
+          : Promise.resolve({ data: [], error: null }),
       ])
 
       if (!isMounted) return
@@ -257,6 +343,7 @@ export function EventProvider({ children }: { children: ReactNode }) {
         const userRegistrations = !registrationsResult.error && registrationsResult.data
           ? registrationsResult.data as EventAttendeeRow[]
           : []
+        setEventCatalog(mappedEvents)
         setEventList(mappedEvents.filter((event) => new Date(`${getLastEventDate(event)}T23:59:59`) >= now))
         setHistory(
           mappedEvents
@@ -272,6 +359,7 @@ export function EventProvider({ children }: { children: ReactNode }) {
         )
         setSessionList(mappedSessions)
       } else {
+        setEventCatalog([])
         setEventList([])
         setHistory([])
         setSessionList([])
@@ -285,19 +373,28 @@ export function EventProvider({ children }: { children: ReactNode }) {
       }
 
       if (!certificateResult.error && certificateResult.data) {
+        const certificateAudits = !certificateAuditsResult.error && certificateAuditsResult.data
+          ? certificateAuditsResult.data as NuCertificateAuditRow[]
+          : []
         setCertificates(
-          certificateResult.data.map((item) => {
-            const event = (eventsResult.data as EventRow[] | null)?.find((row) => row.id === item.event_id)
-            return {
-              id: String(item.id),
-              title: event?.event_name ?? 'QMO Event',
-              eventDate: event?.start_datetime.slice(0, 10) ?? '',
-              issuedDate: new Date().toISOString().slice(0, 10),
-              certificateNumber: `NU-QMO-${item.event_id}-${item.id}`,
-              downloadUrl: item.certificate_url as string | undefined,
-            }
-          }),
+          (certificateResult.data as NuCertificateRow[]).map((item) => ({
+            id: String(item.id),
+            createdAt: item.created_at,
+            eventId: String(item.event_id),
+            recipientName: item.recipient_name?.trim() || 'Certificate recipient',
+            recipientEmail: item.recipient_email?.trim() || 'Email not specified',
+            verificationCode: item.verification_code?.trim() || String(item.id),
+            filePath: certificateAudits
+              .filter((audit) => String(audit.certificate_id) === String(item.id))
+              .map((audit) => getAuditFilePath(audit.metadata))
+              .find((filePath): filePath is string => Boolean(filePath)),
+            issuedAt: item.issued_at || item.created_at,
+            revokedAt: item.revoked_at || undefined,
+            status: item.status === null ? undefined : String(item.status),
+          })),
         )
+      } else {
+        setCertificates([])
       }
       setIsLoading(false)
     }
@@ -311,6 +408,7 @@ export function EventProvider({ children }: { children: ReactNode }) {
   const value = useMemo<EventDataContextValue>(
     () => ({
       events: eventList,
+      eventCatalog,
       sessions: sessionList,
       history,
       certificates,
@@ -397,7 +495,7 @@ export function EventProvider({ children }: { children: ReactNode }) {
           : event))
       },
     }),
-    [eventList, sessionList, history, certificates, registeredIds, registeredSessionIds, isLoading, user, isDemoMode],
+    [eventList, eventCatalog, sessionList, history, certificates, registeredIds, registeredSessionIds, isLoading, user, isDemoMode],
   )
 
   return <EventDataContext.Provider value={value}>{children}</EventDataContext.Provider>

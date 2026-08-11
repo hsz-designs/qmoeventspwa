@@ -4,6 +4,8 @@ export const nuTableColumns = {
   nu_attendees: ['id', 'created_at', 'user_id', 'event_id', 'date_time_first_in', 'date_time_last_out', 'date_index', 'status', 'session_id'],
   nu_attendees_log: ['id', 'created_at', 'event_id', 'user_id', 'date_time', 'date_index', 'session_id', 'log_type'],
   nu_buildings: ['id', 'created_at', 'building_name', 'address', 'created_by', 'date_time_last_updated', 'last_updated_by'],
+  nu_certificate_audits: ['id', 'created_at', 'certificate_id', 'action', 'metadata'],
+  nu_certificates: ['id', 'created_at', 'event_id', 'recipient_name', 'recipient_email', 'verification_code', 'file_path', 'issued_at', 'revoked_at', 'status'],
   nu_departments: ['id', 'created_at', 'department_name', 'created_by', 'last_updated_date_time', 'last_updated_by'],
   nu_event_attendees_log: ['id', 'created_at', 'event_id', 'user_id', 'date_time', 'date_index', 'session_id', 'log_type'],
   nu_event_attendees: ['id', 'created_at', 'user_id', 'event_id', 'date_time_first_in', 'date_time_last_out', 'date_index', 'status', 'session_id', 'certificate_url'],
